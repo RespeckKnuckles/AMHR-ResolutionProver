@@ -31,3 +31,9 @@ for f in newFormulae:
 				continue
 	print("\t",f)
 ```
+
+translateFOF.py has some helper functions to convert TPTP-formatted formulae and files to S-expressions:
+```testF = """fof(x,axiom,((P(a) & (Q(b)!=a)) => Q(c)))."""
+print("Parsing:", testF)
+print(treeToSexp(translateFOF_formula(testF)))
+```
