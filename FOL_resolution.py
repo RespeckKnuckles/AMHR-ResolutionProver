@@ -982,21 +982,21 @@ if __name__=="__main__":
 	t = time.time() - s
 	print("Took",t/60,"minutes")
 
-	# F = ["(IFF G (NOT (Prv_PA (QB G))))",
-	#     "G"]
-	# [vars,newFormulae] = oneStepResolution(F, False)
-	# print("Vars:", vars)
-	# print("Formulae found; ignoring (OR x (NOT x)):")
-	# for f in newFormulae:
-	# 	#should we skip this formula?
-	# 	if f[0]=='OR':
-	# 		if f[1][0]=='NOT':
-	# 			if f[1][1] == f[2]:
-	# 				continue
-	# 		elif f[2][0] == 'NOT':
-	# 			if f[1] == f[2][1]:
-	# 				continue
-	# 	print("\t",f)
+# 	F = ["(IFF G (NOT (Prv_PA (QB G))))",
+# 		"G"]
+# 	[vars,newFormulae] = oneStepResolution(F, False)
+# 	print("Vars:", vars)
+# 	print("Formulae found; ignoring (OR x (NOT x)):")
+# 	for f in newFormulae:
+# 		#should we skip this formula?
+# 		if f[0]=='OR':
+# 			if f[1][0]=='NOT':
+# 				if f[1][1] == f[2]:
+# 					continue
+# 			elif f[2][0] == 'NOT':
+# 				if f[1] == f[2][1]:
+# 					continue
+# 		print("\t",f)
 
 	# exp = ['AND', ["FORALL", 'x', ['EXISTS', 'y', ['P', 'x', 'y']]], ["FORALL", 'x', ['EXISTS', 'y', ['P', 'x', 'y']]]]
 
