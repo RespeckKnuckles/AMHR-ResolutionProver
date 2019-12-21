@@ -160,7 +160,7 @@ def pE(s):
 keys are the variables, and values are the terms that replace them (terms can be either
 formula trees, or single strings. So the substitution f(b)/X is represented as:
 sub["X"] = ['f' 'b']
-And the substitution Y/Z is represented:
+And the substitution Y/Z (Y replaces Z) is represented:
 sub['Z'] = 'Y'
 Note: All variable and term names are case sensitive!
 """
