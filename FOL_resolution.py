@@ -780,7 +780,8 @@ def folResolution(clauses, varList, maxNumClauses=100, showNumClauses=False, tra
 					trace.append([i1,i2])
 				if showNumClauses:
 					if len(allClauses)%1000==0:#(maxNumClauses/10)==0:
-						print("NUMBER OF CLAUSES:",len(allClauses))
+						pass
+						# print("NUMBER OF CLAUSES:",len(allClauses))
 							# if len(allClauses)%50==0:
 							# 	print("NUMBER OF CLAUSES:",len(allClauses))
 				numAdded += 1
