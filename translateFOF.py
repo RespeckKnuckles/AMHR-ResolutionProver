@@ -129,7 +129,10 @@ def translateFOF_formula(S, returnMetadata=False, replaceTnF=True):
 		j = j+1
 		(k,quantifiedFormula) = parseUnknown(j)
 		
-		return (k, ['EXISTS', quantifiedVars, quantifiedFormula])
+		if len(quantifiedVars)==1:
+			return (k, ['EXISTS', quantifiedVars[0], quantifiedFormula])
+		else:
+			return (k, ['EXISTS', quantifiedVars, quantifiedFormula])
 	
 	def parseUniversal(i):
 		#i is the index of the first square bracket
@@ -155,7 +158,10 @@ def translateFOF_formula(S, returnMetadata=False, replaceTnF=True):
 		j = j+1
 		(k,quantifiedFormula) = parseUnknown(j)
 		
-		return (k, ['FORALL', quantifiedVars, quantifiedFormula])
+		if len(quantifiedVars)==1:
+			return (k, ['FORALL', quantifiedVars[0], quantifiedFormula])
+		else:
+			return (k, ['FORALL', quantifiedVars, quantifiedFormula])
 	
 	def parseArgument(i):
 		if verbose:
