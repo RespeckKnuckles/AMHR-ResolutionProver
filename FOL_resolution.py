@@ -130,16 +130,19 @@ def parseTokens(tokens):
 
 def parseExpression(expr, simple=False):
 	"""Parses an s-expression to be a nested list."""
+	# print("parsing", expr)
 	tokensAll = re.findall("#.*[\n\r]|[:a-zA-Z0-9\-_'!]+|\(|\)", expr)
 	tokens = [t for t in tokensAll if t[0]!='#' ] #go through and remove all comment lines
-# 	print("passing tokens:", tokens)
+	# print("passing tokens:", tokens)
 	allStructure = parseTokens(tokens)
 	return allStructure
 
-def symbolInTree(symbol, T):
-	if symbol==T:
-		return True
+def symbolInTree(symbol, T, countSubstrings=False):
 	if isinstance(T, str):
+		if symbol==T:
+			return True
+		if (countSubstrings==True) & (symbol in T):
+			return True
 		return False
 	for arg in T:
 		if symbolInTree(symbol, arg):
@@ -147,6 +150,7 @@ def symbolInTree(symbol, T):
 	return False
 
 def pE(s):
+	print("parsing", s)
 	return parseExpression(s)
 
 #T = parseExpression("(NOT (FORALL B (IMPLIES (FORALL Y (IMPLIES (IMPLIES (r B) (r Y)) (p (f Y) Y))) (EXISTS X (EXISTS Y (AND (p X Y) (IMPLIES (q (f B) B) (q X Y))))))))")
@@ -452,8 +456,8 @@ def removeQuantifiers(T, currVarsInScope=[], startingIndex=0):
 
 
 """Given a formula tree that has had all of the above functions applied to it, returns a list
-of clauses, where each clause is a list of literals."""
-def convertToCNF(T):
+of clauses, where each clause is a list of literals. Does not use tseitin transformation."""
+def convertToCNF_noTseitin(T):
 	def isLiteral(T):
 		if isinstance(T,str):
 			return True
@@ -595,6 +599,43 @@ def convertToCNF(T):
 		# print("after collapse:",T)
 		T = convertToCNF_recursive(T)
 		# print("after convertToCNF:",T)				
+
+
+"""Given a formula tree that has had all of the above functions applied to it, returns a list
+of clauses, where each clause is a list of literals. Uses the tseitin transformation, so it'll
+introduce a bunch of new variables with prefix "NTV_" (new tseitin variable)."""
+def convertToCNF(T):
+	# print(printSExpNice(T))
+	counter = 0
+	newVarPrefix = "NTV_"
+	while symbolInTree(newVarPrefix, T, countSubstrings=True):
+		newVarPrefix = newVarPrefix + '_'
+	def getNewVar():
+		nonlocal counter
+		counter += 1
+		return newVarPrefix + str(counter)
+
+	allIffs = dict()
+	#converts a formula into tseitin iffs, adds them to allIffs and returns the tseitin variable 
+	def convertToTseitin(T):
+		nonlocal allIffs
+		if isinstance(T,str) or T[0] not in ['NOT', 'AND', 'OR']:
+			return T
+		# print("T[0] was", T[0])
+		newVar = getNewVar()
+		allIffs[newVar] = [T[0]] + [convertToTseitin(v) for v in T[1:]]
+		# print("added", T[0])
+		return newVar
+	topVar = convertToTseitin(T)
+	# print()
+	# for k in allIffs:
+	# 	print(k, ":", allIffs[k])
+	# print("TOP:", topVar)
+	toReturn = ['AND']
+	for v in allIffs:
+		toReturn.append(['IFF', v, allIffs[v]])
+	toReturn.append(topVar)
+	return convertToCNF_noTseitin(convertToNegationNormalForm(toReturn))
 
 
 ##################################################
@@ -811,45 +852,35 @@ def stringExpressionsToCNF(sExps, verbose=False):
 	exp = standardizeVariables(exp)
 	if verbose:
 		print("\nStandardized::",exp, len(exp))
-	# prenex = [convertToPrenex(f) for f in exp[1:]] #split up so it doesn't put universal quantifiers above where they need to be (no longer necessary with new version of removeQuantifiers())
-	# if verbose:
-	# 	print("\nPrenex::")
-	# 	for p in prenex:
-	# 		print("\t",p)
-
-	# vars = set()
-	# i = 0
-	# removedQuantifiers = []
-	# for f in prenex:
-	# 	[vars_this,f_new,i] = removeQuantifiers(f, i)
-	# 	removedQuantifiers.append(f_new)
-	# 	# print("vars:", vars, "index:", i, "\nexp:", f_new)
-	# 	for v in vars_this:
-	# 		vars.add(v)
-	# if verbose:
-	# 	print("\nSkolemized:")
-	# 	for p in removedQuantifiers:
-	# 		print("\t",p)
-	# 	print("vars:",vars)
 
 	[vars, f, i] = removeQuantifiers(exp)
 
-	# cnf = []
-	# for f in removedQuantifiers:
-	# 	cnf_this = convertToCNF(f)
-	# 	for c in cnf_this:
-	# 		if c not in cnf:
-	# 			cnf.append(c)
 	cnf = convertToCNF(f)
+	cnf2 = convertToCNF_noTseitin(f)
+	if len(cnf2) < len(cnf):
+		cnf = cnf2
 	if verbose:
 		try:
 			print("\nCNF:: [")
 			for c in cnf:
 				print('\t', c)
-			print("   ]")
+			print("   ] Num clauses:", len(cnf))
 		except:
 			print("\nCould not print CNF (probably too large)")
 	return [cnf, list(vars)]
+
+def convertToCNF_hw2(F):
+	[T,_] = stringExpressionsToCNF([F])
+	toReturn = []
+	for C in T:
+		thisClause = set()
+		for l in C:
+			if isinstance(l,str):
+				thisClause.add(l)
+			else:
+				thisClause.add('-' + l[1])
+		toReturn.append(thisClause)
+	return toReturn
 
 
 """Given a list of string S-expressions in FOL, this determines whether they lead to a contradiction.
@@ -970,34 +1001,39 @@ def oneStepResolution(sExps, verbose=False):
 ###########  TEMPORARY TEST STUFF ################
 ##################################################
 if __name__=="__main__":
+	pass
 	# F = ["(FORALL psi (AND (PROVES PA (Opposite (QB psi) (QB (NOT psi)))) (Opposite (QB psi) (QB (NOT psi)))))",
 	# "(FORALL phi (IMPLIES (PROVES PA phi) (Proves (QB phi))))",
 	# "(FORALL n (FORALL m (IMPLIES (AND (Opposite n m) (Proves n)) (NOT (Proves m)))))",
 	# "(EXISTS phi (AND (PROVES PA phi) (PROVES PA (NOT phi))))"]
+	# stringExpressionsToCNF(F, verbose=True)
 
-	import time
-	s = time.time()
-	F = ["(EXISTS A (EXISTS B (EXISTS C (EXISTS D (AND (modifier_pp A at B) (AND (predicate1 A wave C) (AND (predicate1 D smile C) (AND (object C child countable na geq 2) (camera B)))))))))",
-	"(EXISTS A (AND (NOT (EXISTS B (predicate1 B smile A))) (object A child countable na geq 2)))"]
-	[result,trace,clauses] = findContradiction(F, 50000, verbose=True)
-	t = time.time() - s
-	print("Took",t/60,"minutes")
+	# F = "(OR (IFF a b) (AND (IF a c) (NOT (IF b c))))"
+	# print(convertToCNF_hw2(F))
 
-# 	F = ["(IFF G (NOT (Prv_PA (QB G))))",
-# 		"G"]
-# 	[vars,newFormulae] = oneStepResolution(F, False)
-# 	print("Vars:", vars)
-# 	print("Formulae found; ignoring (OR x (NOT x)):")
-# 	for f in newFormulae:
-# 		#should we skip this formula?
-# 		if f[0]=='OR':
-# 			if f[1][0]=='NOT':
-# 				if f[1][1] == f[2]:
-# 					continue
-# 			elif f[2][0] == 'NOT':
-# 				if f[1] == f[2][1]:
-# 					continue
-# 		print("\t",f)
+	# import time
+	# s = time.time()
+	# F = ["(EXISTS A (EXISTS B (EXISTS C (EXISTS D (AND (modifier_pp A at B) (AND (predicate1 A wave C) (AND (predicate1 D smile C) (AND (object C child countable na geq 2) (camera B)))))))))",
+	# "(EXISTS A (AND (NOT (EXISTS B (predicate1 B smile A))) (object A child countable na geq 2)))"]
+	# [result,trace,clauses] = findContradiction(F, 50000, verbose=True)
+	# t = time.time() - s
+	# print("Took",t/60,"minutes")
+
+	# F = ["(IFF G (NOT (Prv_PA (QB G))))",
+	# 	"G"]
+	# [vars,newFormulae] = oneStepResolution(F, False)
+	# print("Vars:", vars)
+	# print("Formulae found; ignoring (OR x (NOT x)):")
+	# for f in newFormulae:
+	# 	#should we skip this formula?
+	# 	if f[0]=='OR':
+	# 		if f[1][0]=='NOT':
+	# 			if f[1][1] == f[2]:
+	# 				continue
+	# 		elif f[2][0] == 'NOT':
+	# 			if f[1] == f[2][1]:
+	# 				continue
+	# 	print("\t",f)
 
 	# exp = ['AND', ["FORALL", 'x', ['EXISTS', 'y', ['P', 'x', 'y']]], ["FORALL", 'x', ['EXISTS', 'y', ['P', 'x', 'y']]]]
 
