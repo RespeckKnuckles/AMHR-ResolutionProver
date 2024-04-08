@@ -7,7 +7,7 @@ This code uses S-expressions, with FORALL and EXISTS as quantifiers and AND, OR,
 
 This code will print a proof of the classic Aristotelian syllogism:
 ```
-F = ["(FORALL x (Man x) (Mortal x))", 
+F = ["(FORALL x (IF (Man x) (Mortal x)))", 
   "(Man Socrates)",
   "(NOT (Mortal Socrates))"]
 [result,trace,clauses] = findContradiction(F, 50000, verbose=True)
